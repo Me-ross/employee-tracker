@@ -20,6 +20,7 @@ function init() {
       'Add a role', 
       'Add an employee', 
       'Update an employee role', 
+      'Test Function',
       'Quit']
   }
  ])
@@ -35,7 +36,7 @@ function init() {
       break;
     case 'View all roles':
       console.log('you want to View all roles');
-      init();
+      viewAllRoles();
       break;
     case 'View all employees':
     viewAllEmps();
@@ -43,19 +44,23 @@ function init() {
       break;
     case 'Add a department':
       console.log('you want to Add a department');
-      init();
+      addDept();
       break;
     case 'Add a role':
       console.log('you want to Add a role');
-      init();
+      getDepts();
       break;
     case 'Add an employee':
       console.log('you want to Add an employee');
-      init();
+      addEmp();
       break;
     case 'Update an employee role':
       console.log('you want to Update an employee role');
       init();
+      break;
+    case 'Test Function':
+      console.log('test');
+      test();
       break;
     // if choice is anything other than above then exit through this method that is accessible to node
     default:
@@ -94,12 +99,22 @@ function viewAllDepts() {
     .catch(err => console.log(err));
   }
 
-// WHEN I choose to view all employees
-// THEN I am presented with a formatted table showing employee data, including employee ids, first names, last names, job titles, departments, salaries, and managers that the employees report to
+  function viewAllRoles() {
+    const sql = `SELECT title AS 'Job Title', role.id, salary, name AS 'Department Name'
+                 FROM role
+                 JOIN department ON department.id = role.department_id`;
+    db.promise()
+      .query(sql)
+      .then(([rows, _]) => {
+        console.table(rows);
+        init(); 
+    })
+    .catch(err => console.log(err));
+  }
 
 // Bec we have to join employee table to itself to get the manager name then we need to create an alias - 1st time around alias is emp for employee table 2nd time alias is mgr for employee table --- to get the manager first & last name we have to join wherever the employee id matches the manager id
 function viewAllEmps() {
-    const sql = `SELECT emp.id, emp.first_name, emp.last_name, title, salary, CONCAT(mgr.first_name, ' ', mgr.last_name) AS manager, name
+    const sql = `SELECT emp.id, emp.first_name, emp.last_name, title, salary, CONCAT(mgr.first_name, ' ', mgr.last_name) AS manager, name AS 'Department Name'
                  FROM employee emp
                  LEFT JOIN employee mgr ON mgr.id = emp.manager_id
                  LEFT JOIN role ON emp.role_id = role.id
@@ -112,3 +127,197 @@ function viewAllEmps() {
     })
     .catch(err => console.log(err));
   }
+
+function addDept() {
+  inquirer
+    .prompt([
+      {
+        type: 'input',
+        name: 'newDept',
+        message: 'what is the name of the Department you wish to add?'
+      }
+    ])
+    .then((answer) => {
+      const sql = `INSERT INTO department (name)
+      VALUES ('${answer.newDept}')`;
+      db.promise()
+      .query(sql)
+      .then(() => {
+        console.log(`New ${answer.newDept} Department Added`); 
+        init();
+    })
+  })
+  .catch(err => console.log(err));
+}
+
+let deptTable = {};
+
+function getDepts() {
+    const sql = 'SELECT * FROM department';
+  db.promise()
+    .query(sql)
+    .then(([rows, _]) => {
+      deptTable = rows;
+      addRole(deptTable);
+    })
+    .catch(err => console.log(err));
+}
+
+function addRole(deptTable) {
+  let depNames = [];
+  deptTable.forEach((i) => depNames.push(i.name))
+  inquirer.prompt([
+    {
+      type: 'input',
+      name: 'newTitle',
+      message: 'what is the job title of the role you wish to add?'
+    },
+    {
+      type: 'input',
+      name: 'newSalary',
+      message: 'what is the salary for the role you wish to add?'
+    },
+    {
+      type: 'list',
+      name: 'dept',
+      message: 'What deparment is the role in?',
+      choices: depNames,
+    },
+  ])
+    .then((answer) => {
+      let newEmpDeptid;
+      deptTable.forEach((i) => {
+        if (i.name === answer.dept) {
+            newEmpDeptid = i.id;
+        }
+      });
+     
+      const sql = `INSERT INTO role (title, salary, department_id)
+        VALUES ('${answer.newTitle}', '${answer.newSalary}', '${newEmpDeptid}')`;
+      db.promise()
+        .query(sql)
+        .then(() => {
+          console.log(`New role title ${answer.newTitle} with Salary ${answer.newSalary} added to ${answer.dept} department`);
+          init();
+        })
+    })
+    .catch(err => console.log(err));
+}
+
+let titleTable = {};
+
+function getTitles() {
+  const sql = 'SELECT * FROM role';
+  db.promise()
+    .query(sql)
+    .then(([rows, _]) => {
+      titleTable = rows;
+      addEmp(titleTable);
+  })
+  .catch(err => console.log(err));
+}
+
+let mngrNames = [];
+
+function getMngrs() {
+  const sql = `SELECT CONCAT(mgr.first_name, ' ', mgr.last_name) AS manager
+               FROM employee emp
+               LEFT JOIN employee mgr ON mgr.id = emp.manager_id
+               WHERE mgr.id IS NOT NULL`;
+  db.promise()
+    .query(sql)
+    .then(([rows, _]) => {
+      console.log(rows)
+      console.table(rows);
+      mngrNames = rows;
+  })
+  .catch(err => console.log(err));
+}
+
+function addEmp() {
+  let titleTable = {};
+  let roleTitles = [];
+  const sql1 = 'SELECT * FROM role';
+  db.promise()
+    .query(sql1)
+    .then(([rows, _]) => {
+      console.log(rows)
+      titleTable = rows;
+      titleTable.forEach((i) => roleTitles.push(i.title))
+  })
+  let empTable = {};
+  let empNames = [];
+  const sql2 = 'SELECT * FROM employee';
+  db.promise()
+    .query(sql2)
+    .then(([rows, _]) => {
+      console.log(rows)
+      empTable = rows;
+      empTable.forEach((i) => empNames.push(`${i.first_name} ${i.last_name}`));
+  })
+  inquirer.prompt([
+    {
+      type: 'input',
+      name: 'newFirstName',
+      message: 'what is the first name of the new employee?'
+    },
+    {
+      type: 'input',
+      name: 'newLastName',
+      message: 'what is the last name of the new employee?'
+    },
+    {
+      type: 'list',
+      name: 'titles',
+      message: 'what is the title of the new employee?',
+      choices: roleTitles,
+    },
+    {
+      type: 'list',
+      name: 'manager',
+      message: 'who is the manager of the new employee?',
+      choices: empNames,
+    },
+  ])
+    .then((answer) => {
+      console.log(answer)
+      let newid;
+      titleTable.forEach((i) => {
+        if (i.title === answer.titles) {
+            newid = i.id;
+            console.log(newid)
+        }
+      });
+      let mngrid;
+      empTable.forEach((i) => {
+        if (`${i.first_name} ${i.last_name}` === answer.manager){
+            mngrid = i.id;
+        }
+      })
+     
+      const sql = `INSERT INTO employee (first_name, last_name, role_id, manager_id)
+        VALUES ('${answer.newFirstName}', '${answer.newLastName}', '${newid}', '${mngrid}')`;
+      db.promise()
+      .query(sql)
+      .then(() => {
+        console.log(`${answer.newFirstName} ${answer.newLastName} with title ${answer.titles} added as a New Employee to Manager ${answer.manager}'s team`);
+        init();
+      })
+    })
+    .catch(err => console.log(err));
+}
+
+function test() {
+  const sql = `SELECT CONCAT(mgr.first_name, ' ', mgr.last_name) AS manager
+               FROM employee emp
+               LEFT JOIN employee mgr ON mgr.id = emp.manager_id
+               WHERE mgr.id IS NOT NULL`;
+  db.promise()
+    .query(sql)
+    .then(([rows, _]) => {
+      console.log(rows)
+      console.table(rows);
+      init(); 
+  })
+  .catch(err => console.log(err));
+}
