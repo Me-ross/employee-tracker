@@ -43,7 +43,7 @@ SO THAT I can organize and plan my business
 ![Mockup of 3 tables showing the rows and columns with titles](./Assets/12-sql-homework-demo-01.png)
 
 ## Video
-You can see a video demonstration for this app [here]()
+You can see a video demonstration for this app [here](https://app.castify.com/view/aa79f8a6-c862-49a4-a9de-839f0d765e56)
 
 ## GitHub 
 ReRepository for Team Profile application can be found at: [GitHub](https://github.com/Me-ross/employee-tracker)
