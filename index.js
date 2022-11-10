@@ -35,7 +35,6 @@ function init() {
       viewAllDepts();
       break;
     case 'View all roles':
-      console.log('you want to View all roles');
       viewAllRoles();
       break;
     case 'View all employees':
@@ -43,26 +42,18 @@ function init() {
       init();
       break;
     case 'Add a department':
-      console.log('you want to Add a department');
       addDept();
       break;
     case 'Add a role':
-      console.log('you want to Add a role');
       getDepts();
       break;
     case 'Add an employee':
-      console.log('you want to Add an employee');
       addEmp();
       break;
     case 'Update an employee role':
-      console.log('you want to Update an employee role');
-      init();
+      updateRole();
       break;
-    case 'Test Function':
-      console.log('test');
-      test();
-      break;
-    // if choice is anything other than above then exit through this method that is accessible to node
+    // if choice is anything other than above then exit
     default:
       process.exit()
   }
@@ -153,7 +144,7 @@ function addDept() {
 let deptTable = {};
 
 function getDepts() {
-    const sql = 'SELECT * FROM department';
+  const sql = 'SELECT * FROM department';
   db.promise()
     .query(sql)
     .then(([rows, _]) => {
@@ -197,41 +188,11 @@ function addRole(deptTable) {
       db.promise()
         .query(sql)
         .then(() => {
-          console.log(`New role title ${answer.newTitle} with Salary ${answer.newSalary} added to ${answer.dept} department`);
+          console.log(`New Role title ${answer.newTitle} with Salary ${answer.newSalary} added to ${answer.dept} department`);
           init();
         })
     })
     .catch(err => console.log(err));
-}
-
-let titleTable = {};
-
-function getTitles() {
-  const sql = 'SELECT * FROM role';
-  db.promise()
-    .query(sql)
-    .then(([rows, _]) => {
-      titleTable = rows;
-      addEmp(titleTable);
-  })
-  .catch(err => console.log(err));
-}
-
-let mngrNames = [];
-
-function getMngrs() {
-  const sql = `SELECT CONCAT(mgr.first_name, ' ', mgr.last_name) AS manager
-               FROM employee emp
-               LEFT JOIN employee mgr ON mgr.id = emp.manager_id
-               WHERE mgr.id IS NOT NULL`;
-  db.promise()
-    .query(sql)
-    .then(([rows, _]) => {
-      console.log(rows)
-      console.table(rows);
-      mngrNames = rows;
-  })
-  .catch(err => console.log(err));
 }
 
 function addEmp() {
@@ -241,7 +202,6 @@ function addEmp() {
   db.promise()
     .query(sql1)
     .then(([rows, _]) => {
-      console.log(rows)
       titleTable = rows;
       titleTable.forEach((i) => roleTitles.push(i.title))
   })
@@ -251,7 +211,6 @@ function addEmp() {
   db.promise()
     .query(sql2)
     .then(([rows, _]) => {
-      console.log(rows)
       empTable = rows;
       empTable.forEach((i) => empNames.push(`${i.first_name} ${i.last_name}`));
   })
@@ -280,12 +239,10 @@ function addEmp() {
     },
   ])
     .then((answer) => {
-      console.log(answer)
       let newid;
       titleTable.forEach((i) => {
         if (i.title === answer.titles) {
             newid = i.id;
-            console.log(newid)
         }
       });
       let mngrid;
@@ -307,17 +264,74 @@ function addEmp() {
     .catch(err => console.log(err));
 }
 
-function test() {
-  const sql = `SELECT CONCAT(mgr.first_name, ' ', mgr.last_name) AS manager
-               FROM employee emp
-               LEFT JOIN employee mgr ON mgr.id = emp.manager_id
-               WHERE mgr.id IS NOT NULL`;
+function updateRole() {
+  let empTable = {};
+  let empList = [];
+  const sql1 = 'SELECT * FROM employee';
   db.promise()
-    .query(sql)
+    .query(sql1)
     .then(([rows, _]) => {
-      console.log(rows)
-      console.table(rows);
-      init(); 
+      empTable = rows;
+      empTable.forEach((i) => empList.push(`${i.first_name} ${i.last_name}`));
+  })
+  let titleTable = {};
+  let roleTitles = [];
+  const sql2 = 'SELECT * FROM role';
+  db.promise()
+    .query(sql2)
+    .then(([rows, _]) => {
+      titleTable = rows;
+      titleTable.forEach((i) => roleTitles.push(i.title))
+  })
+
+  inquirer.prompt([
+    {
+      type: 'input',
+      name: 'test',
+      message:'this is a test?',
+    },
+    {
+      type: "list",
+      name: "updtEmpl",
+      message: "which Employee do you want to update?",
+      choices: empList
+    },
+    {
+      type: 'list',
+      name: 'newEmpTitle',
+      message: 'what is the title of the new employee?',
+      choices: roleTitles,
+    },
+  ])
+    .then((answer) => {
+      let empRow;
+      empTable.forEach((i) => {
+        if (`${i.first_name} ${i.last_name}` === answer.updtEmpl){
+          empRow = i
+        }
+      })
+      let currentTitle;
+      titleTable.forEach((i) => {
+        if (i.id === empRow.role_id){
+         currentTitle = i.title
+        }
+      })
+      let newTitleId;
+      titleTable.forEach((i) => {
+        if (i.title === answer.newEmpTitle){
+          newTitleId = i.id
+        }
+      })
+     
+    const sql = `UPDATE employee
+                SET role_id = '${newTitleId}'
+                WHERE first_name = '${empRow.first_name}' AND last_name = '${empRow.last_name}'`;
+    db.promise()
+    .query(sql)
+    .then(() => {
+      console.log(`${answer.updtEmpl} had a current title of ${currentTitle} that was updated to ${answer.newEmpTitle}`);
+      init();
+    })
   })
   .catch(err => console.log(err));
 }
