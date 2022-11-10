@@ -19,8 +19,7 @@ function init() {
       'Add a department', 
       'Add a role', 
       'Add an employee', 
-      'Update an employee role', 
-      'Test Function',
+      'Update an employee role',
       'Quit']
   }
  ])
@@ -287,8 +286,8 @@ function updateRole() {
   inquirer.prompt([
     {
       type: 'input',
-      name: 'test',
-      message:'this is a test?',
+      name: 'Role',
+      message:'You want to Update Employee?',
     },
     {
       type: "list",

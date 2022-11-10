@@ -29,12 +29,12 @@ SO THAT I can organize and plan my business
     6. add an employee
     7. update an employee role
 - following image shows the command line with the above choices:
-![Text pages showing the 8 options mentioned above]()
+![Text pages showing the 8 options mentioned above](./Assets/Empl_Menu.png)
 - view all departments: presented with a formatted table showing department names and department ids
 - view all roles: presented with the job title, role id, the department that role belongs to, and the salary for that role
 - view all employees: presented with a formatted table showing employee data, including employee ids, first names, last names, job titles, departments, salaries, and managers that the employees report to
-- following image shows the tabe employee table:
-![Text pages showing table with name, title, department, salary and manager]()
+- following image shows the tabe all Roles:
+![Text pages showing table with name, title and salary](./Assets/All_Roles.png)
 - add a department: prompted to enter the name of the department and that department is added to the database
 - add a role: prompted to enter the name, salary, and department for the role and that role is added to the database
 - add an employee: prompted to enter the employee’s first name, last name, role, and manager, and that employee is added to the database
