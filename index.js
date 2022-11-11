@@ -4,7 +4,7 @@ const inquirer = require('inquirer');
 const db = require('./config/connection');
 require('console.table');
 
-// questions need to loop therefore we need to wrap the inquirer prompt in a function that is called everytime the question is asked until user chooes Quit when they come out of the loop through the node exit method.
+// questions need to loop therefore we need to wrap the inquirer prompt in a function that is called everytime the question is asked until user choses Quit when they come out of the loop through the node exit method.
 function init() {
 // start prompting user
  inquirer.prompt([
@@ -38,7 +38,6 @@ function init() {
       break;
     case 'View all employees':
     viewAllEmps();
-      init();
       break;
     case 'Add a department':
       addDept();
@@ -64,7 +63,7 @@ function init() {
 init()
 
 
-// choice: view all departments ==> show a table with dept names ande dept ids.
+// choice: view all departments ==> show a table with dept names and dept ids.
 // function viewAllDepts() {
 //   const sql = 'SELECT * FROM department';
 // //   using the query method available from the db. but first need to make sure db folder is imported - activity 21 and 22
@@ -112,6 +111,7 @@ function viewAllEmps() {
     db.promise()
       .query(sql)
       .then(([rows, _]) => {
+        console.log('\n');
         console.table(rows);
         init(); 
     })
@@ -263,74 +263,74 @@ function addEmp() {
     .catch(err => console.log(err));
 }
 
-function updateRole() {
-  let empTable = {};
-  let empList = [];
-  const sql1 = 'SELECT * FROM employee';
-  db.promise()
-    .query(sql1)
-    .then(([rows, _]) => {
-      empTable = rows;
-      empTable.forEach((i) => empList.push(`${i.first_name} ${i.last_name}`));
-  })
-  let titleTable = {};
-  let roleTitles = [];
-  const sql2 = 'SELECT * FROM role';
-  db.promise()
-    .query(sql2)
-    .then(([rows, _]) => {
-      titleTable = rows;
-      titleTable.forEach((i) => roleTitles.push(i.title))
-  })
+// timing issue, inquirer does not display array if we add an exta input question first this gives a little extra time allowing the promise to retrieve all employees to complete before inquirer needed to list all employees. This issue gets resolved by adding an async/await.
+async function updateRole() {
+	let empTable;
+	const sql1 = 'SELECT * FROM employee';
+	let empList = await db
+		.promise()
+		.query(sql1)
+		.then(([rows, _]) => {
+			empTable = rows;
+			return empTable.map((i) => `${i.first_name} ${i.last_name}`);
+		});
 
-  inquirer.prompt([
-    {
-      type: 'input',
-      name: 'Role',
-      message:'You want to Update Employee?',
-    },
-    {
-      type: "list",
-      name: "updtEmpl",
-      message: "which Employee do you want to update?",
-      choices: empList
-    },
-    {
-      type: 'list',
-      name: 'newEmpTitle',
-      message: 'what is the title of the new employee?',
-      choices: roleTitles,
-    },
-  ])
-    .then((answer) => {
-      let empRow;
-      empTable.forEach((i) => {
-        if (`${i.first_name} ${i.last_name}` === answer.updtEmpl){
-          empRow = i
-        }
-      })
-      let currentTitle;
-      titleTable.forEach((i) => {
-        if (i.id === empRow.role_id){
-         currentTitle = i.title
-        }
-      })
-      let newTitleId;
-      titleTable.forEach((i) => {
-        if (i.title === answer.newEmpTitle){
-          newTitleId = i.id
-        }
-      })
-     
-    const sql = `UPDATE employee
+	let titleTable;
+	const sql2 = 'SELECT * FROM role';
+	let roleTitles = await db
+		.promise()
+		.query(sql2)
+		.then(([rows, _]) => {
+			titleTable = rows;
+			return titleTable.map((i) => i.title);
+		});
+
+	inquirer
+		.prompt([
+			{
+				type: 'list',
+				name: 'updtEmpl',
+				message: 'which Employee do you want to update?',
+				choices: empList,
+			},
+			{
+				type: 'list',
+				name: 'newEmpTitle',
+				message: 'what is the title of the new employee?',
+				choices: roleTitles,
+			},
+		])
+		.then((answer) => {
+			let empRow;
+			empTable.forEach((i) => {
+				if (`${i.first_name} ${i.last_name}` === answer.updtEmpl) {
+					empRow = i;
+				}
+			});
+			let currentTitle;
+			titleTable.forEach((i) => {
+				if (i.id === empRow.role_id) {
+					currentTitle = i.title;
+				}
+			});
+			let newTitleId;
+			titleTable.forEach((i) => {
+				if (i.title === answer.newEmpTitle) {
+					newTitleId = i.id;
+				}
+			});
+
+			const sql = `UPDATE employee
                 SET role_id = '${newTitleId}'
                 WHERE first_name = '${empRow.first_name}' AND last_name = '${empRow.last_name}'`;
-    db.promise()
-    .query(sql)
-    .then(() => {
-      console.log(`${answer.updtEmpl} had a current title of ${currentTitle} that was updated to ${answer.newEmpTitle}`);
-      init();
-    })
-  })
-  .catch(err => console.log(err));
+			db.promise()
+				.query(sql)
+				.then(() => {
+					console.log(
+						`${answer.updtEmpl} had a current title of ${currentTitle} that was updated to ${answer.newEmpTitle}`
+					);
+					init();
+				});
+		})
+		.catch((err) => console.log(err));
 }
