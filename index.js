@@ -23,9 +23,6 @@ function init() {
       'Quit']
   }
  ])
-// Check EACH STEP - it's a promise therefore we can attach a then to return the answer. console.log(answer) you see that answer is an object { action: 'whatever we chose'} -- if you just want to only see the value of action then you can console.log(answer.action)
-// *** .then(answer => console.log(answer)).catch(err => console.log(err));
-
 
 // need to check 8 diff posibilits therefore switch is used to evalutate the action property of the answer object and invoke a function depending on the returned valued
  .then(answer => {
@@ -63,18 +60,6 @@ function init() {
 init()
 
 
-// choice: view all departments ==> show a table with dept names and dept ids.
-// function viewAllDepts() {
-//   const sql = 'SELECT * FROM department';
-// //   using the query method available from the db. but first need to make sure db folder is imported - activity 21 and 22
-//   db.query(sql, (err, result) => {
-//     if (err) return console.log(err);
-//     console.log(result)
-//     console.table(result);
-//     init(); 
-//   })
-// }
-
 // use db querry as a promise you can use .then to see results
 function viewAllDepts() {
     const sql = 'SELECT * FROM department';
@@ -90,8 +75,8 @@ function viewAllDepts() {
 
   function viewAllRoles() {
     const sql = `SELECT title AS 'Job Title', role.id, salary, name AS 'Department Name'
-                 FROM role
-                 JOIN department ON department.id = role.department_id`;
+      FROM role
+      JOIN department ON department.id = role.department_id`;
     db.promise()
       .query(sql)
       .then(([rows, _]) => {
@@ -104,10 +89,10 @@ function viewAllDepts() {
 // Bec we have to join employee table to itself to get the manager name then we need to create an alias - 1st time around alias is emp for employee table 2nd time alias is mgr for employee table --- to get the manager first & last name we have to join wherever the employee id matches the manager id
 function viewAllEmps() {
     const sql = `SELECT emp.id, emp.first_name, emp.last_name, title, salary, CONCAT(mgr.first_name, ' ', mgr.last_name) AS manager, name AS 'Department Name'
-                 FROM employee emp
-                 LEFT JOIN employee mgr ON mgr.id = emp.manager_id
-                 LEFT JOIN role ON emp.role_id = role.id
-                 LEFT JOIN department ON role.department_id = department.id`;
+      FROM employee emp
+      LEFT JOIN employee mgr ON mgr.id = emp.manager_id
+      LEFT JOIN role ON emp.role_id = role.id
+      LEFT JOIN department ON role.department_id = department.id`;
     db.promise()
       .query(sql)
       .then(([rows, _]) => {
